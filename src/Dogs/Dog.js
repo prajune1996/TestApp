@@ -15,6 +15,9 @@ class Dog extends Component {
   search = (value) => {
     this.setState({
       searchTerm: value,
+      dogs: [],
+      dogImages: [],
+      urls: [],
     });
     // length check
     if (value.length > 3) {
@@ -26,46 +29,56 @@ class Dog extends Component {
         .get(`https://api.thedogapi.com/v1/breeds/search?q=${value}`)
         .then((res) => {
           const dogs = res.data;
-          this.setState({ dogs });
-          // filter dogs where no image was available
-          let finalResults = dogs.filter(function (item) {
-            return item.reference_image_id !== undefined;
-          });
-          // sliced 6 dog images
-          this.setState({ dogImages: finalResults.slice(0, 6) });
-          const { dogImages } = this.state;
-          // hitting every dog's image api
-          for (var i = 0; i < dogImages.length; i++) {
-            let key = dogImages[i].reference_image_id;
-            axios
-              .get(`https://api.thedogapi.com/v1/images/${key}`)
-              .then((res) => {
-                let data = res.data.url;
-                if (dogImages.length > 1) {
-                  this.setState({
-                    urls: [...this.state.urls, data],
-                    isLoader: false,
-                  });
-                } else {
-                  this.setState({
-                    urls: [data],
-                    isLoader: false,
-                  });
-                }
-              });
+          if (res.data.length > 0) {
+            this.setState({ dogs });
+
+            // filter dogs where no image was available
+            let finalResults = dogs.filter(function (item) {
+              return item.reference_image_id !== undefined;
+            });
+            // sliced 6 dog images
+            this.setState({ dogImages: finalResults.slice(0, 6) });
+            const { dogImages } = this.state;
+            // hitting every dog's image api
+            for (var i = 0; i < dogImages.length; i++) {
+              let key = dogImages[i].reference_image_id;
+              axios
+                .get(`https://api.thedogapi.com/v1/images/${key}`)
+                .then((res) => {
+                  let data = res.data.url;
+                  if (dogImages.length > 1) {
+                    const { searchTerm } = this.state;
+                    if (searchTerm === value) {
+                      this.setState({
+                        urls: [...this.state.urls, data],
+                        isLoader: false,
+                      });
+                    }
+                  } else {
+                    this.setState({
+                      urls: [data],
+                      isLoader: false,
+                    });
+                  }
+                });
+            }
+          } else {
+            this.setState({ isLoader: false });
           }
         });
-    }else{
+    } else {
       this.setState({
         dogs: [],
         dogImages: [],
         urls: [],
+        isLoader: false,
       });
     }
   };
 
   render() {
     const { urls, isLoader } = this.state;
+    console.log(this.state);
     return (
       <>
         <h1 className="py-4 text-center">
@@ -115,6 +128,11 @@ class Dog extends Component {
                 <img className="img-fluid img-animal" src={data} />
               </div>
             ))}
+          {urls.length === 0 && (
+            <div className="col-12 py-5">
+              <p className="text-center text-danger">No dogs found</p>
+            </div>
+          )}
           {isLoader && (
             <div className="col-12 py-5">
               <p className="text-center text-danger">Loading</p>
