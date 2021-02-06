@@ -78,7 +78,6 @@ class Dog extends Component {
 
   render() {
     const { urls, isLoader } = this.state;
-    console.log(this.state);
     return (
       <>
         <h1 className="py-4 text-center">
